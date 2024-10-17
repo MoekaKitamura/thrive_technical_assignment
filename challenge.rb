@@ -30,6 +30,12 @@ class CompanyProcessor
 
     def load_json(file_name)
       JSON.parse(File.read(file_name))
+    rescue Errno::ENOENT
+      puts "Error: File not found - #{file_name}"
+      []
+    rescue JSON::ParserError
+      puts "Error: Could not parse JSON from file - #{file_name}"
+      []
     end
 
     def build_company_report(company, sorted_users)
