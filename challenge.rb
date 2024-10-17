@@ -5,6 +5,24 @@ class CompanyProcessor
   COMPANIES_JSON_FILE = "companies.json".freeze
   USERS_JSON_FILE = "users.json".freeze
 
+  REQUIRED_COMPANY_FIELDS = %w[
+    id
+    name
+    top_up
+    email_status
+  ].freeze
+
+  REQUIRED_USER_FIELDS = %w[
+    id
+    first_name
+    last_name
+    email
+    company_id
+    email_status
+    active_status
+    tokens
+  ].freeze
+
   def initialize
     @companies = load_json(COMPANIES_JSON_FILE)
     @users = load_json(USERS_JSON_FILE)
@@ -14,7 +32,13 @@ class CompanyProcessor
     output_text = []
 
     companies.each do |company|
-      active_users = users.select { |user| user["company_id"] == company["id"] && user["active_status"] }
+      return puts "Invalid company data: #{company}" unless valid_company?(company)
+
+      active_users = users.select do |user|
+        return puts "Invalid user data: #{user}" unless valid_user?(user)
+
+        user["company_id"] == company["id"] && user["active_status"]
+      end
 
       next if active_users.empty?
 
@@ -38,6 +62,14 @@ class CompanyProcessor
       []
     end
 
+    def valid_company?(company)
+      REQUIRED_COMPANY_FIELDS.all? { |field| company.key?(field) }
+    end
+
+    def valid_user?(user)
+      REQUIRED_USER_FIELDS.all? { |field| user.key?(field) }
+    end
+
     def build_company_report(company, sorted_users)
       emailed_users_list = []
       not_emailed_users_list = []
@@ -53,19 +85,19 @@ class CompanyProcessor
       end
 
       <<~COMPANY_REPORT.gsub(/^/, "\t")
-        Company Id: #{company["id"]}
-        Company Name: #{company["name"]}
-        Users Emailed:#{emailed_users_list.any? ? "\n\t" : ""}#{emailed_users_list.join.strip}
-        Users Not Emailed:#{not_emailed_users_list.any? ? "\n\t" : ""}#{not_emailed_users_list.join.strip}
-        Total amount of top ups for #{company["name"]}: #{sorted_users.count * company["top_up"]}
+        Company Id: #{company['id']}
+        Company Name: #{company['name']}
+        Users Emailed:#{emailed_users_list.any? ? "\n\t" : ''}#{emailed_users_list.join.strip}
+        Users Not Emailed:#{not_emailed_users_list.any? ? "\n\t" : ''}#{not_emailed_users_list.join.strip}
+        Total amount of top ups for #{company['name']}: #{sorted_users.count * company['top_up']}
       COMPANY_REPORT
     end
 
     def format_user_info(user, company_top_up)
       <<~USER_INFO.gsub(/^/, "\t")
-        #{user["last_name"]}, #{user["first_name"]}, #{user["email"]}
-          Previous Token Balance, #{user["tokens"]}
-          New Token Balance #{user["tokens"] + company_top_up}
+        #{user['last_name']}, #{user['first_name']}, #{user['email']}
+          Previous Token Balance, #{user['tokens']}
+          New Token Balance #{user['tokens'] + company_top_up}
       USER_INFO
     end
 
