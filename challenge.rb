@@ -22,7 +22,7 @@ class CompanyProcessor
       output_text << build_company_report(company, sorted_users)
     end
 
-    save_output_to_file(output_text)
+    save_output_to_file(output_text.join("\n"))
   end
 
   private
@@ -55,12 +55,9 @@ class CompanyProcessor
       <<~COMPANY_REPORT.gsub(/^/, "\t")
         Company Id: #{company["id"]}
         Company Name: #{company["name"]}
-        Users Emailed:
-          #{emailed_users_list.join.strip}
-        Users Not Emailed:
-          #{not_emailed_users_list.join.strip}
+        Users Emailed:#{emailed_users_list.any? ? "\n\t" : ""}#{emailed_users_list.join.strip}
+        Users Not Emailed:#{not_emailed_users_list.any? ? "\n\t" : ""}#{not_emailed_users_list.join.strip}
         Total amount of top ups for #{company["name"]}: #{sorted_users.count * company["top_up"]}
-
       COMPANY_REPORT
     end
 
